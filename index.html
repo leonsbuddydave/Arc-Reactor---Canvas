@@ -1,0 +1,367 @@
+<html>
+	<head>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/jquery-ui.min.js"></script>
+		<script type="text/javascript">
+			var width, height;
+
+			var canvas, c, radius, center_x, center_y;
+
+			var TABS = 8.0;
+			var NOTCHES = 40;
+
+			var pulseValue = 0;
+			var pulseAngle = 0;
+			var reactorAngle = 0;
+
+			var colors =
+			{
+				baseMetal: 
+					function ()
+					{ 
+						col = c.createRadialGradient(center_x, center_y, 0, center_x, center_y, radius);
+						col.addColorStop(0.9, '#999999');
+						col.addColorStop(.95, '#777777');
+						col.addColorStop(1.0, '#444444');
+						return col;
+					},
+				baseGlow:
+					function()
+					{
+						col = c.createRadialGradient(center_x, center_y, 0, center_x, center_y, radius * .9);
+						col.addColorStop(.95, "#a9d7d3");
+						col.addColorStop(.85, "#ffffff");
+						col.addColorStop(.8, "#80ccc7");
+						return col;
+					},
+				innerGlow:
+					function()
+					{
+						col = c.createRadialGradient(center_x, center_y, 0, center_x, center_y, radius * .3);
+						col.addColorStop(.95, "#a9d7d3");
+						col.addColorStop(.85, "#ffffff");
+						col.addColorStop(.8, "#80ccc7");
+						col.addColorStop(.5, "#ffffff");
+						return col;
+					},
+				innerRing:
+					function()
+					{
+						col = c.createRadialGradient(center_x, center_y, 0, center_x, center_y, radius);
+						col.addColorStop(.6, '#666666');
+						col.addColorStop(.65, '#777777');
+						col.addColorStop(.7, '#999999');
+						return col;
+					},
+				innermostRing:
+					function()
+					{
+						col = c.createRadialGradient(center_x, center_y, 0, center_x, center_y, radius * .4);
+						col.addColorStop(.75, '#444444');
+						//col.addColorStop(.9, '#777777');
+						col.addColorStop(.95, '#999999');
+						return col;
+					},
+				outerTabs:
+					function()
+					{
+						col = "#777777";
+						return col;
+					},
+				coreGlow:
+					function()
+					{
+						col = "#a9d7d3";
+						return col;
+					},
+				centerBlur:
+					function()
+					{
+						col = "#a9d7d3";
+						col = c.createRadialGradient(center_x, center_y, 0, center_x, center_y, radius * 1.3);
+						col.addColorStop(.8, "rgba(169, 215, 211, " + pulseValue + ")");
+						col.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+						return col;
+					},
+				armorNormal:
+					function()
+					{
+						return "rgba(55, 5, 6, " + pulseValue + ")";
+					},
+				armorDark:
+					function()
+					{
+						return "rgba(30, 1, 2, " + pulseValue + ")";
+					},
+				armorLight:
+					function()
+					{
+						return "#661819";
+					},
+				armor:
+					function()
+					{
+						col = c.createRadialGradient(center_x, center_y, 0, center_x, center_y, width * .5);
+						col.addColorStop(1.0, colors.armorDark());
+						col.addColorStop(.5, colors.armorNormal());
+						return col;
+					}
+			}
+
+			function Point(x, y)
+			{
+				this.x = x;
+				this.y = y;
+			}
+				
+			function update()
+			{
+				console.log("Updating");
+				clear();
+				draw();
+				requestAnimFrame(update);
+			}
+
+			window.requestAnimFrame = (function(){
+     			return  window.requestAnimationFrame       || 
+             			window.webkitRequestAnimationFrame || 
+              			window.mozRequestAnimationFrame    || 
+              			window.oRequestAnimationFrame      || 
+              			window.msRequestAnimationFrame     || 
+				function( callback ){
+                			window.setTimeout(callback, 1000 / 60);
+              			};
+    			})();
+
+			$(document).ready(function()
+			{
+				c = $("canvas")[0].getContext('2d');
+				width = $(window).width();
+				height = $(window).height();
+				radius = width / 6;
+				center_x = width / 2;
+				center_y = height / 2;
+				$("#screen").attr("width", width).attr("height", height);
+				update();
+			});
+		
+			$(window).resize(function()
+			{
+				width = $(window).width();
+				height = $(window).height();
+				radius = width / 6;
+				center_x = width / 2;
+				center_y = height / 2;
+				$("#screen").attr("width", width).attr("height", height);
+			});
+
+			// Drawing functions
+			function draw()
+			{
+				chestPlate();
+				drawBase();
+				drawReactorEdge();
+				drawCover();
+				drawCoreLayer();
+				drawTabs();
+				drawBlurs();
+			}
+
+			function chestPlate()
+			{
+				c.fillStyle = colors.armor();
+				c.fillRect(0, 0, width, height);
+			}
+
+			function drawBlurs()
+			{
+				pulseAngle += Math.PI / 180;
+				pulseValue = Math.abs(Math.sin(pulseAngle) / 4) + .2;
+				c.fillStyle = colors.centerBlur();
+				c.beginPath();
+				c.arc(center_x, center_y, radius * 1.3, 0, Math.PI * 2, false);
+				c.closePath();
+				c.fill();
+			}
+
+			function clear()
+			{
+				c.fillStyle = "#000000";
+				c.fillRect(0, 0, width, height);
+			}
+
+			function drawCover()
+			{
+				c.fillStyle = colors.innerRing();
+				c.beginPath();
+				c.arc(center_x, center_y, radius * .7, 0, Math.PI * 2, false);
+				c.closePath();
+				c.fill();
+			}
+
+			function drawCoreLayer()
+			{
+				c.strokeStyle = "#120e03";
+				c.fillStyle = colors.coreGlow();
+				c.lineWidth = 4;
+				c.beginPath();
+				c.arc(center_x, center_y, .50 * radius, 0, Math.PI * 2, false);
+				c.closePath();
+				c.fill();
+				c.stroke();
+				
+				c.strokeStyle = "#000000";
+				c.lineWidth = 2;
+				inRad = .4 * radius;
+				outRad = .5 * radius;
+				notchAngle = Math.PI * 2 / NOTCHES;
+
+				for (i = 0; i < NOTCHES; i++)
+				{
+					c.beginPath();
+					c.moveTo(center_x + Math.cos(notchAngle * i) * inRad, center_y + Math.sin(notchAngle * i) * inRad);
+					c.lineTo(center_x + Math.cos(notchAngle * i) * outRad, center_y + Math.sin(notchAngle * i) * outRad);
+					c.stroke();
+					c.closePath();
+				}
+
+				c.strokeStyle = "#120e03";
+				c.fillStyle = colors.innermostRing();
+				c.lineWidth = 4;
+				c.beginPath();
+				c.arc(center_x, center_y, .4 * radius, 0, Math.PI * 2, false);
+				c.closePath();
+				c.fill();
+				c.stroke();
+
+				c.strokeStyle = "#120e03";
+				c.fillStyle = colors.innerGlow();
+				c.beginPath();
+				c.arc(center_x, center_y, .3 * radius, 0, Math.PI * 2, false);
+				c.closePath();
+				c.fill();
+				c.stroke();
+			}
+
+			function drawTabs()
+			{
+				c.strokeStyle = "#120e03";
+				c.save();
+				c.fillStyle = colors.outerTabs();
+				c.lineWidth = 3;
+				tabscale = .04 * radius;
+				rs = .55;
+				rot_angle = Math.PI * 2 / TABS;
+				// Points, from bottom left clockwise to bottom right
+				// Point positions are relative to origin
+
+				tab_points = [
+					new Point(0, -2),
+					new Point(4, -3),
+					new Point(10, -3),
+					new Point(10, 3),
+					new Point(4, 3),
+					new Point(0, 2)
+				];
+				console.log(radius);
+				for (i = 0; i < TABS; i++)
+				{
+					taborigin_x = width / 2 + radius * rs;
+					taborigin_y = height / 2;
+					c.beginPath();
+					c.moveTo(taborigin_x, taborigin_y);
+					for (p = 0; p < tab_points.length; p++)
+					{
+						x = width / 2 + tab_points[p].x * tabscale + radius * rs;
+						y = height / 2 + tab_points[p].y * tabscale;
+						c.lineTo(x, y);
+					}
+					c.lineTo(taborigin_x, taborigin_y);
+					c.closePath();
+					c.fill();
+					c.stroke();
+
+					c.translate( width / 2, height / 2);
+					c.rotate(rot_angle);
+					c.translate(-width / 2, -height / 2);
+				}
+				c.restore();
+			}
+
+			function drawReactorEdge()
+			{
+				c.strokeStyle = "#120e03";
+				c.save();
+				reactorAngle += Math.PI / 5;
+				c.fillStyle = "#ffffff";
+				c.shadowOffsetX = 0;
+				c.shadowOffsetY = 0;
+				c.shadowBlur = 10;
+				c.shadowColor = "#ffffff";
+				c.beginPath();
+				c.moveTo(center_x, center_y);
+				c.arc(center_x, center_y, radius * .9, reactorAngle, reactorAngle + Math.PI / 6, false);
+				c.closePath();
+				c.fill();
+				c.restore();
+			}
+
+			function drawBase()
+			{				
+				c.fillStyle = colors.baseMetal();
+				c.strokeStyle = "#120e03";
+				//c.fillStyle = "#7a766d";
+				c.lineWidth = 5;
+				c.beginPath();
+				c.arc(center_x, center_y, radius, 0, Math.PI * 2, false);
+				c.closePath();
+				c.fill();
+				c.stroke();
+
+				c.fillStyle = colors.baseGlow();
+				c.strokeStyle = null;
+				c.beginPath();
+				c.arc(center_x, center_y, radius * .9, 0, Math.PI * 2, false);
+				c.closePath();
+				c.fill();
+			}
+		</script>
+		<script type="text/javascript">
+
+			var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-31586992-1']);
+	  _gaq.push(['_trackPageview']);
+
+	  (function() {
+	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+
+  	</script>
+  	<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-31586992-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+	</script>
+	</head>
+	<body>
+		<style type="text/css">
+			#screen
+			{
+				position: absolute;
+				top: 0;
+				left: 0;
+			}
+		</style>
+		<canvas id="screen">No canvas support!</canvas>
+	</body>
+</html>
